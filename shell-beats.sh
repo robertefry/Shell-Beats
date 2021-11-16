@@ -24,7 +24,7 @@ __list()
 
 __play()
 {
-    line="$(__parse | grep $1)"
+    line=$(__parse | grep "$*")
     printf "Now Playing: %s ☕️🎶...\n -> (%s)\n" "${line% *}" "${line##* }"
     mpv --no-video "${line##* }"
 }
@@ -34,7 +34,7 @@ case $1 in
         __list
         ;;
     play)
-        __play $2
+        __play "${@:2}"
         ;;
     *)
         __help
