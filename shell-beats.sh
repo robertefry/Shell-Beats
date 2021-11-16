@@ -9,15 +9,24 @@ __help()
     printf "  %s\n" "play <stream>      play the <stream> by name"
 }
 
+__parse()
+{
+    grep -Ev '^(\s*\#.*)?$' shell-beats.sources
+}
+
 __list()
 {
-    printf "\033[32m%s\033[m (%s)\n" $(grep -Ev '^(\s*#.*)?$' shell-beats.sources)
+    __parse | while read line
+    do
+        printf "\033[32m%s\033[m (%s)\n" "${line% *}" "${line##* }"
+    done
 }
 
 __play()
 {
-    printf "Now Playing: %s ☕️🎶...\n -> (%s)\n" $(grep $1 shell-beats.sources)
-    mpv $(grep $1 shell-beats.sources | cut -d' ' -f2)
+    line="$(__parse | grep $1)"
+    printf "Now Playing: %s ☕️🎶...\n -> (%s)\n" "${line% *}" "${line##* }"
+    mpv --no-video "${line##* }"
 }
 
 case $1 in
