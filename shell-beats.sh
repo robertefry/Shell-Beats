@@ -11,7 +11,7 @@ __help()
 
 __parse()
 {
-    grep -Ev '^(\s*\#.*)?$' shell-beats.sources
+    grep -Ev '^(\s*#.*)?$' shell-beats.sources
 }
 
 __list()
