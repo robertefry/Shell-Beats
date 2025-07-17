@@ -4,9 +4,12 @@
 # TODO: implement shell-beats.d/*.source
 # TODO: show mpv stderr with `-v` option
 # TODO: show mpv stdout with `-vv` option
+# TODO: split sources with `name = url`
+# TODO: rename "source" to "stream"
 
-ERR_SOURCES_TOO_FEW=$((0x01))
-ERR_SOURCES_TOO_MANY=$((0x02))
+ERR_SOURCE_NOT_FOUND=$((0x01))
+ERR_SOURCES_TOO_FEW=$((0x02))
+ERR_SOURCES_TOO_MANY=$((0x03))
 
 __get_script_dir()
 {
@@ -56,39 +59,78 @@ _parse_source_url()
     printf '%s\n' "${1##* }" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
+_format_source()
+{
+    _SOURCE="$1"
+    _NAME="$(_parse_source_name "$_SOURCE")"
+    _URL="$(_parse_source_url "$_SOURCE")"
+
+    printf "\033[32m%s\033[m\t\033[2;3;37m(%s)\033[m\n" "$_NAME" "$_URL"
+}
+
 list()
 {
     _parse_sources | while IFS= read -r _line
     do
-        _NAME="$(_parse_source_name "$_line")"
-        _URL="$(_parse_source_url "$_line")"
-
-        printf "\033[32m%s\033[m\t\033[2;3;37m(%s)\033[m\n" "$_NAME" "$_URL"
+        printf "%s\n" "$(_format_source "$_line")"
     done | column -t -s "$(printf '\t')"
 }
 
-_select_source()
+_select_source_into()
 {
+    _SOURCE_VAR="$1"
+    shift
+
     _SOURCES="$(_parse_sources | grep -i "$*")"
     _SOURCE_COUNT="$(printf '%s\n' "$_SOURCES" | sed '/^$/d' | wc -l)"
 
     if [ "$_SOURCE_COUNT" -lt 1 ]; then
         printf '%s\n' "No sources found." >&2
-        return $ERR_SOURCES_TOO_FEW
+        return "$ERR_SOURCE_NOT_FOUND"
     fi
 
     if [ "$_SOURCE_COUNT" -eq 1 ]; then
-        printf '%s\n' "$_SOURCES"
+        eval "$_SOURCE_VAR=\$(printf '%s\n' \"\$_SOURCES\")"
         return 0
     fi
 
-    printf '%s\n' "Too many sources found. (TBD source selection)" >&2
-    return $ERR_SOURCES_TOO_MANY
+    printf '%s\n' "Multiple sources found."
+    _SOURCE_INDEX=1
+
+    while IFS= read -r _line
+    do
+        printf '  %d) %s\n' "$_SOURCE_INDEX" "$(_format_source "$_line")"
+        eval "_SOURCE_$((_SOURCE_INDEX))=\"\$_line\""
+        _SOURCE_INDEX=$((_SOURCE_INDEX + 1))
+    done <<EOF
+        $_SOURCES
+EOF
+
+    while :; do
+        printf 'Please select a source [1-%d]: ' "$((_SOURCE_INDEX - 1))"
+        IFS= read -r _SOURCE_SELECTION
+
+        case $_SOURCE_SELECTION in
+            ''|*[!0-9]*)
+                ;;
+            *)
+                if  [ "$_SOURCE_SELECTION" -ge 1 ] &&
+                    [ "$_SOURCE_SELECTION" -lt "$_SOURCE_INDEX" ]
+                then
+                    eval "$_SOURCE_VAR=\$(printf '%s\n' \"\$_SOURCE_$_SOURCE_SELECTION\")"
+                    return 0
+                fi
+                ;;
+        esac
+
+        printf '%s\n' "Invalid selection: \"$_SOURCE_SELECTION\"" >&2
+    done
 }
 
 play()
 {
-    _SOURCE="$(_select_source "$*")" || return $?
+    _select_source_into "_SOURCE" "$*" || return "$?"
+
     _NAME="$(_parse_source_name "$_SOURCE")"
     _URL="$(_parse_source_url "$_SOURCE")"
 
