@@ -12,6 +12,8 @@ ERR_SOURCES_TOO_FEW=$((0x02))
 ERR_SOURCES_TOO_MANY=$((0x03))
 ERR_FAILED_TO_PLAY=$((0x10))
 
+MPV_PID=""
+
 __get_script_dir()
 {
     _SOURCE_PATH="$0"
@@ -137,7 +139,11 @@ play()
 
     printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$_NAME" "$_URL"
 
-    if ! mpv --no-video --no-sub --msg-level=all=no "$_URL"
+    mpv --no-video --no-sub --msg-level=all=no "$_URL" &
+    MPV_PID="$!"
+    wait "$MPV_PID"; MPV_EXIT_CODE="$?"; MPV_PID=""
+
+    if ! "$MPV_EXIT_CODE"
     then
         printf 'Error: Failed to play URL %s\n' "$_URL" >&2
         return "$ERR_FAILED_TO_PLAY"
@@ -146,9 +152,10 @@ play()
 
 _clean_exit()
 {
+    test -n "$MPV_PID" && kill "$MPV_PID"
     printf '\n'; exit 0
 }
-trap _clean_exit INT TERM
+trap _clean_exit EXIT INT TERM
 
 case $1 in
     list)
