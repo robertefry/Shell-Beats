@@ -1,103 +1,101 @@
-#!/bin/bash
+#!/bin/sh
 
-ERR_TOO_FEW_SOURCES=$((0x01))
-ERR_TOO_MANY_SOURCES=$((0x02))
+ERR_SOURCES_TOO_FEW=$((0x01))
+ERR_SOURCES_TOO_MANY=$((0x02))
 
 __get_script_dir()
 {
-    local SOURCE_PATH="${BASH_SOURCE[0]}"
-    local SYMLINK_DIR
-    local SCRIPT_DIR
+    _SOURCE_PATH="$0"
 
-    while [ -L "$SOURCE_PATH" ]
+    while [ -L "$_SOURCE_PATH" ]
     do
-        SYMLINK_DIR="$(cd -P "$(dirname "$SOURCE_PATH")" &>/dev/null && pwd)"
-        SOURCE_PATH="$(readlink "$SOURCE_PATH")"
+        _SYMLINK_DIR="$(cd -P "$(dirname "$_SOURCE_PATH")" >/dev/null 2>&1 && pwd)"
+        _SYMLINK_TARGET="$(readlink "$_SOURCE_PATH")"
 
-        if [[ $SOURCE_PATH != /* ]]; then
-            SOURCE_PATH=$SYMLINK_DIR/$SOURCE_PATH
-        fi
+        case "$_SYMLINK_TARGET" in
+            /*) _SOURCE_PATH="$_SYMLINK_TARGET" ;;
+            *)  _SOURCE_PATH="$_SYMLINK_DIR/$_SYMLINK_TARGET" ;;
+        esac
     done
 
-    SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE_PATH")" &>/dev/null && pwd)"
-    echo "$SCRIPT_DIR"
+    _SCRIPT_DIR="$(cd -P "$(dirname "$_SOURCE_PATH")" >/dev/null 2>&1 && pwd)"
+    printf '%s\n' "$_SCRIPT_DIR"
 }
 
 __get_sources_path()
 {
-    echo "$(__get_script_dir)/shell-beats.sources"
+    printf '%s\n' "$(__get_script_dir)/shell-beats.sources"
 }
 
 print_help()
 {
     printf "%s\n" "Play music in the background"
-    printf "  %s\n" "Usage: ./shell-beats.sh [options]"
+    printf "%s\n" "  Usage: $(basename "$0") [options]"
     printf "%s\n" "[options]"
-    printf "  %s\n" "list               list the available streams"
-    printf "  %s\n" "play <stream>      play the <stream> by name"
+    printf "%s\n" "  list               list the available streams"
+    printf "%s\n" "  play <stream>      play the <stream> by name"
 }
 
 _parse_sources()
 {
-    grep -Ev '^(\s*#.*)?$' "$(__get_sources_path)"
+    grep -Ev '^([[:space:]]*#.*)?$' "$(__get_sources_path)"
 }
 
 _parse_source_name()
 {
-    echo "${1% *}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    printf '%s\n' "${1% *}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 _parse_source_url()
 {
-    echo "${1##* }" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    printf '%s\n' "${1##* }" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 list()
 {
-    _parse_sources | while read line
+    _parse_sources | while IFS= read -r _line
     do
-        local NAME="$(_parse_source_name "$line")"
-        local URL="$(_parse_source_url "$line")"
+        _NAME="$(_parse_source_name "$_line")"
+        _URL="$(_parse_source_url "$_line")"
 
-        printf "\033[32m%s\033[m\t(%s)\n" "$NAME" "$URL"
-    done | column -t -s $'\t'
+        printf "\033[32m%s\033[m\t(%s)\n" "$_NAME" "$_URL"
+    done | column -t -s "$(printf '\t')"
 }
 
 _select_source()
 {
-    local MATCHES="$(_parse_sources | grep -i "$*")"
-    local COUNT=$(echo "$MATCHES" | sed '/^$/d' | wc -l)
+    _SOURCES="$(_parse_sources | grep -i "$*")"
+    _SOURCE_COUNT="$(printf '%s\n' "$_SOURCES" | sed '/^$/d' | wc -l)"
 
-    if [ "$COUNT" -lt 1 ]; then
-        echo "No sources found." >&2
-        return $ERR_TOO_FEW_SOURCES
+    if [ "$_SOURCE_COUNT" -lt 1 ]; then
+        printf '%s\n' "No sources found." >&2
+        return $ERR_SOURCES_TOO_FEW
     fi
 
-    if [ "$COUNT" -eq 1 ]; then
-        echo "$MATCHES"
+    if [ "$_SOURCE_COUNT" -eq 1 ]; then
+        printf '%s\n' "$_SOURCES"
         return 0
     fi
 
-    echo "Too many sources found. (TBD source selection)" >&2
-    return $ERR_TOO_MANY_SOURCES
+    printf '%s\n' "Too many sources found. (TBD source selection)" >&2
+    return $ERR_SOURCES_TOO_MANY
 }
 
 play()
 {
-    local SOURCE; SOURCE="$(_select_source "$*")" || return $?
-    local NAME="$(_parse_source_name "$SOURCE")"
-    local URL="$(_parse_source_url "$SOURCE")"
+    _SOURCE="$(_select_source "$*")" || return $?
+    _NAME="$(_parse_source_name "$_SOURCE")"
+    _URL="$(_parse_source_url "$_SOURCE")"
 
-    printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$NAME" "$URL"
-    mpv --no-video "$URL" &>/dev/null
+    printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$_NAME" "$_URL"
+    mpv --no-video "$_URL" >/dev/null 2>&1
 }
 
-_on_sigint()
+_clean_exit()
 {
-    echo
-    exit 0
+    printf '\n'; exit 0
 }
-trap _on_sigint SIGINT
+trap _clean_exit INT TERM
 
 case $1 in
     list)
