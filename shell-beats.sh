@@ -1,5 +1,8 @@
 #!/bin/bash
 
+ERR_TOO_FEW_SOURCES=$((0x01))
+ERR_TOO_MANY_SOURCES=$((0x02))
+
 __get_script_dir()
 {
     local SOURCE_PATH="${BASH_SOURCE[0]}"
@@ -56,15 +59,34 @@ list()
         local NAME="$(_parse_source_name "$line")"
         local URL="$(_parse_source_url "$line")"
 
-        printf "\033[32m%s\033[m (%s)\n" "$NAME" "$URL"
-    done
+        printf "\033[32m%s\033[m\t(%s)\n" "$NAME" "$URL"
+    done | column -t -s $'\t'
+}
+
+_select_source()
+{
+    local MATCHES="$(_parse_sources | grep -i "$*")"
+    local COUNT=$(echo "$MATCHES" | sed '/^$/d' | wc -l)
+
+    if [ "$COUNT" -lt 1 ]; then
+        echo "No sources found." >&2
+        return $ERR_TOO_FEW_SOURCES
+    fi
+
+    if [ "$COUNT" -eq 1 ]; then
+        echo "$MATCHES"
+        return 0
+    fi
+
+    echo "Too many sources found. (TBD source selection)" >&2
+    return $ERR_TOO_MANY_SOURCES
 }
 
 play()
 {
-    local LINE="$(_parse_sources | grep "$*")"
-    local NAME="$(_parse_source_name "$LINE")"
-    local URL="$(_parse_source_url "$LINE")"
+    local SOURCE; SOURCE="$(_select_source "$*")" || return $?
+    local NAME="$(_parse_source_name "$SOURCE")"
+    local URL="$(_parse_source_url "$SOURCE")"
 
     printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$NAME" "$URL"
     mpv --no-video "$URL" &>/dev/null
@@ -85,6 +107,6 @@ case $1 in
         play "${@:2}"
         ;;
     *)
-        help
+        print_help
         ;;
 esac
