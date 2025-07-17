@@ -1,42 +1,83 @@
-#!/bin/sh
+#!/bin/bash
 
-__help()
+__get_script_dir()
 {
-    printf "%s\n" "Play lofi music in the background"
+    local SOURCE_PATH="${BASH_SOURCE[0]}"
+    local SYMLINK_DIR
+    local SCRIPT_DIR
+
+    while [ -L "$SOURCE_PATH" ]
+    do
+        SYMLINK_DIR="$(cd -P "$(dirname "$SOURCE_PATH")" &>/dev/null && pwd)"
+        SOURCE_PATH="$(readlink "$SOURCE_PATH")"
+
+        if [[ $SOURCE_PATH != /* ]]; then
+            SOURCE_PATH=$SYMLINK_DIR/$SOURCE_PATH
+        fi
+    done
+
+    SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE_PATH")" &>/dev/null && pwd)"
+    echo "$SCRIPT_DIR"
+}
+
+__get_sources_path()
+{
+    echo "$(__get_script_dir)/shell-beats.sources"
+}
+
+print_help()
+{
+    printf "%s\n" "Play music in the background"
     printf "  %s\n" "Usage: ./shell-beats.sh [options]"
     printf "%s\n" "[options]"
     printf "  %s\n" "list               list the available streams"
     printf "  %s\n" "play <stream>      play the <stream> by name"
 }
 
-__parse()
+_parse_sources()
 {
-    grep -Ev '^(\s*#.*)?$' shell-beats.sources
+    grep -Ev '^(\s*#.*)?$' "$(__get_sources_path)"
 }
 
-__list()
+_parse_source_name()
 {
-    __parse | while read line
+    echo "${1% *}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+_parse_source_url()
+{
+    echo "${1##* }" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+list()
+{
+    _parse_sources | while read line
     do
-        printf "\033[32m%s\033[m (%s)\n" "${line% *}" "${line##* }"
+        local NAME="$(_parse_source_name "$line")"
+        local URL="$(_parse_source_url "$line")"
+
+        printf "\033[32m%s\033[m (%s)\n" "$NAME" "$URL"
     done
 }
 
-__play()
+play()
 {
-    line=$(__parse | grep "$*")
-    printf "Now Playing: %s ☕️🎶...\n -> (%s)\n" "${line% *}" "${line##* }"
-    mpv --no-video "${line##* }"
+    local LINE="$(_parse_sources | grep "$*")"
+    local NAME="$(_parse_source_name "$LINE")"
+    local URL="$(_parse_source_url "$LINE")"
+
+    printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$NAME" "$URL"
+    mpv --no-video "$URL" &>/dev/null
 }
 
 case $1 in
     list)
-        __list
+        list
         ;;
     play)
-        __play "${@:2}"
+        play "${@:2}"
         ;;
     *)
-        __help
+        help
         ;;
 esac
