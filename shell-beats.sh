@@ -137,7 +137,7 @@ play()
 
     printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$_NAME" "$_URL"
 
-    if ! mpv --no-video --no-sub --msg-level=all=error "$_URL"
+    if ! mpv --no-video --no-sub --msg-level=all=no "$_URL"
     then
         printf 'Error: Failed to play URL %s\n' "$_URL" >&2
         return "$ERR_FAILED_TO_PLAY"
