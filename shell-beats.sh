@@ -70,6 +70,13 @@ play()
     mpv --no-video "$URL" &>/dev/null
 }
 
+_on_sigint()
+{
+    echo
+    exit 0
+}
+trap _on_sigint SIGINT
+
 case $1 in
     list)
         list
