@@ -150,12 +150,18 @@ play()
     fi
 }
 
-_clean_exit()
+__exit_dirty()
 {
     test -n "$MPV_PID" && kill "$MPV_PID"
-    printf '\n'; exit 0
 }
-trap _clean_exit EXIT INT TERM
+trap __exit_dirty EXIT TERM
+
+__exit_clean()
+{
+    __exit_dirty
+    exit 0
+}
+trap __exit_clean INT
 
 case $1 in
     list)
