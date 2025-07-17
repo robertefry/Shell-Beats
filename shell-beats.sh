@@ -10,6 +10,7 @@
 ERR_SOURCE_NOT_FOUND=$((0x01))
 ERR_SOURCES_TOO_FEW=$((0x02))
 ERR_SOURCES_TOO_MANY=$((0x03))
+ERR_FAILED_TO_PLAY=$((0x10))
 
 __get_script_dir()
 {
@@ -135,7 +136,12 @@ play()
     _URL="$(_parse_source_url "$_SOURCE")"
 
     printf "Now Playing: \033[32m%s\033[m\n -> (%s)\n" "$_NAME" "$_URL"
-    mpv --no-video "$_URL" >/dev/null 2>&1
+
+    if ! mpv --no-video --no-sub --msg-level=all=error "$_URL"
+    then
+        printf 'Error: Failed to play URL %s\n' "$_URL" >&2
+        return "$ERR_FAILED_TO_PLAY"
+    fi
 }
 
 _clean_exit()
