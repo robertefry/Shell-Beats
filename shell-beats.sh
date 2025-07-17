@@ -143,7 +143,7 @@ play()
     MPV_PID="$!"
     wait "$MPV_PID"; MPV_EXIT_CODE="$?"; MPV_PID=""
 
-    if ! "$MPV_EXIT_CODE"
+    if [ "$MPV_EXIT_CODE" -ne 0 ]
     then
         printf 'Error: Failed to play URL %s\n' "$_URL" >&2
         return "$ERR_FAILED_TO_PLAY"
