@@ -58,7 +58,7 @@ list()
         _NAME="$(_parse_source_name "$_line")"
         _URL="$(_parse_source_url "$_line")"
 
-        printf "\033[32m%s\033[m\t(%s)\n" "$_NAME" "$_URL"
+        printf "\033[32m%s\033[m\t\033[2;3;37m(%s)\033[m\n" "$_NAME" "$_URL"
     done | column -t -s "$(printf '\t')"
 }
 
