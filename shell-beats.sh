@@ -6,7 +6,6 @@
 # TODO: show mpv stdout with `-vv` option
 # TODO: split sources with `name = url`
 # TODO: rename "source" to "stream"
-# TODO: allow comments after a url
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
 ERR_SOURCES_TOO_FEW=$((0x02))
