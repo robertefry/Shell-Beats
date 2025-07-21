@@ -1,10 +1,8 @@
 #!/bin/sh
 
 # TODO: allow regex search terms
-# TODO: implement shell-beats.d/*.source
 # TODO: show mpv stderr with `-v` option
 # TODO: show mpv stdout with `-vv` option
-# TODO: rename "source" to "stream"
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
 ERR_SOURCES_TOO_FEW=$((0x02))
