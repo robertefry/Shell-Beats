@@ -6,6 +6,7 @@
 # TODO: show mpv stdout with `-vv` option
 # TODO: split sources with `name = url`
 # TODO: rename "source" to "stream"
+# TODO: allow comments after a url
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
 ERR_SOURCES_TOO_FEW=$((0x02))
@@ -54,12 +55,12 @@ _parse_sources()
 
 _parse_source_name()
 {
-    printf '%s\n' "${1% *}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    printf '%s\n' "${1%%=*}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 _parse_source_url()
 {
-    printf '%s\n' "${1##* }" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    printf '%s\n' "${1#*=}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 _format_source()
