@@ -4,7 +4,6 @@
 # TODO: implement shell-beats.d/*.source
 # TODO: show mpv stderr with `-v` option
 # TODO: show mpv stdout with `-vv` option
-# TODO: split sources with `name = url`
 # TODO: rename "source" to "stream"
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
