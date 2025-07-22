@@ -165,7 +165,8 @@ case $1 in
         list
         ;;
     play)
-        play "${@:2}"
+        shift
+        play "$@"
         ;;
     *)
         print_help
