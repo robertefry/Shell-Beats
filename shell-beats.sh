@@ -3,6 +3,8 @@
 # TODO: allow regex search terms
 # TODO: show mpv stderr with `-v` option
 # TODO: show mpv stdout with `-vv` option
+# TODO: option to play in the background
+# TODO: option to show and kill running background beats
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
 ERR_SOURCES_TOO_FEW=$((0x02))
