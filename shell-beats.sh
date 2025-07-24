@@ -99,14 +99,12 @@ _select_source_into()
     printf '%s\n' "Multiple sources found."
     _SOURCE_INDEX=1
 
-    while IFS= read -r _line
+    echo "$_SOURCES" | while IFS= read -r _line
     do
-        printf '  %d) %s\n' "$_SOURCE_INDEX" "$(_format_source "$_line")"
+        printf '  %*d) %s\n' "${#_SOURCE_COUNT}" "$_SOURCE_INDEX" "$(_format_source "$_line")"
         eval "_SOURCE_$((_SOURCE_INDEX))=\"\$_line\""
         _SOURCE_INDEX=$((_SOURCE_INDEX + 1))
-    done <<EOF
-        $_SOURCES
-EOF
+    done | column -t -s "$(printf '\t')"
 
     while :; do
         printf 'Please select a source [1-%d]: ' "$((_SOURCE_INDEX - 1))"
