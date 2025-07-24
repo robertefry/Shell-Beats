@@ -97,33 +97,32 @@ _select_source_into()
     fi
 
     printf '%s\n' "Multiple sources found."
-    _SOURCE_INDEX=1
 
-    echo "$_SOURCES" | while IFS= read -r _line
-    do
-        printf '  %*d) %s\n' "${#_SOURCE_COUNT}" "$_SOURCE_INDEX" "$(_format_source "$_line")"
-        eval "_SOURCE_$((_SOURCE_INDEX))=\"\$_line\""
-        _SOURCE_INDEX=$((_SOURCE_INDEX + 1))
+    _SOURCE_COUNTER=1
+    echo "$_SOURCES" | while IFS= read -r _line; do
+        printf '  %*d) %s\n' "${#_SOURCE_COUNT}" "$_SOURCE_COUNTER" "$(_format_source "$_line")"
+        _SOURCE_COUNTER=$((_SOURCE_COUNTER + 1))
     done | column -t -s "$(printf '\t')"
 
     while :; do
-        printf 'Please select a source [1-%d]: ' "$((_SOURCE_INDEX - 1))"
-        IFS= read -r _SOURCE_SELECTION
+        printf 'Please select a source [1-%d]: ' "$_SOURCE_COUNT"
+        IFS= read -r _SOURCE_INDEX
 
-        case $_SOURCE_SELECTION in
+        case $_SOURCE_INDEX in
             ''|*[!0-9]*)
                 ;;
             *)
-                if  [ "$_SOURCE_SELECTION" -ge 1 ] &&
-                    [ "$_SOURCE_SELECTION" -lt "$_SOURCE_INDEX" ]
+                if  [ "$_SOURCE_INDEX" -ge 1 ] &&
+                    [ "$_SOURCE_INDEX" -le "$_SOURCE_COUNT" ]
                 then
-                    eval "$_SOURCE_VAR=\$(printf '%s\n' \"\$_SOURCE_$_SOURCE_SELECTION\")"
+                    _SOURCE_SELECTION=$(printf '%s\n' "$_SOURCES" | sed -n "${_SOURCE_INDEX}p")
+                    eval "$_SOURCE_VAR=\$_SOURCE_SELECTION"
                     return 0
                 fi
                 ;;
         esac
 
-        printf '%s\n' "Invalid selection: \"$_SOURCE_SELECTION\"" >&2
+        printf '%s\n' "Invalid selection." >&2
     done
 }
 
