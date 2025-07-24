@@ -7,9 +7,7 @@
 # TODO: option to show and kill running background beats
 
 ERR_SOURCE_NOT_FOUND=$((0x01))
-ERR_SOURCES_TOO_FEW=$((0x02))
-ERR_SOURCES_TOO_MANY=$((0x03))
-ERR_FAILED_TO_PLAY=$((0x10))
+ERR_FAILED_TO_PLAY=$((0x02))
 
 MPV_PID=""
 
